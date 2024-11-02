@@ -1,73 +1,121 @@
 "use client";
 
-import { Copy, MoreVertical, Trash, Truck } from "lucide-react";
+import { Copy, MoreVertical, Truck, Check, Printer, FileText } from "lucide-react";
 import { Order, OrderItem, Product } from "@prisma/client";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect } from "react";
 
 interface OrderFormProps {
   initialData: Order & {
     orderItems: (OrderItem & {
-      product: Product & { price: number }; // Ensure price is of type number
-      totalItemAmount: number | null; // Assuming you have this field
+      product: Product & { 
+        price: number;
+        barCode: string;
+        itemDesc: string;
+      };
+      totalItemAmount: number | null;
     })[];
+    attachedPOUrl: string; // Remove the optional '?' to ensure it's required
   };
-};
+}
 
 export const OrdersForm: React.FC<OrderFormProps> = ({ initialData }) => {
-  // Calculate the total price by summing up all totalItemAmounts
   const totalPrice = initialData.orderItems.reduce((acc, item) => {
-    return acc + (item.totalItemAmount || 0); // Ensure totalItemAmount is not undefined
+    return acc + (item.totalItemAmount || 0);
   }, 0);
 
-  // Format total price with commas
   const formattedTotalPrice = totalPrice.toLocaleString('en-US', { style: 'currency', currency: 'PHP' });
 
-  console.log("Order Items:", initialData.orderItems);
-  console.log("Total Price:", formattedTotalPrice);
+  const formatCurrency = (amount: number | null): string => {
+    return amount?.toLocaleString('en-US', { style: 'currency', currency: 'PHP' }) || '₱0.00';
+  };
+
+  console.log('PO URL:', initialData.attachedPOUrl);
+
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        .print-content, .print-content * {
+          visibility: visible;
+        }
+        .print-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
-    <>
-      <Card className="overflow-hidden">
-        <CardHeader className="flex flex-row items-start bg-muted/50">
-          <div className="gap-0.5">
-            <div className="mb-6">
-              <CardTitle>{initialData.companyName}</CardTitle>
-              <CardDescription>{initialData.address}</CardDescription>
-              <CardDescription>{initialData.contactNumber}</CardDescription>
-            </div>
-            <CardTitle className="group flex items-center gap-2 text-md">
-              Order ID: {initialData.id}
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={() => navigator.clipboard.writeText(initialData.id)}
-              >
-                <Copy className="h-3 w-3" />
-                <span className="sr-only">Copy Order ID</span>
-              </Button>
-            </CardTitle>
-            <CardTitle className="group flex items-center gap-2 text-md">
-              {initialData.poNumber}
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={() => navigator.clipboard.writeText(initialData.poNumber)}
-              >
-                <Copy className="h-3 w-3" />
-                <span className="sr-only">Copy PO #</span>
-              </Button>
-            </CardTitle>
-            <CardDescription>Date: {new Date(initialData.createdAt).toLocaleDateString()}</CardDescription>
+    <Card className="overflow-hidden print-content">
+      <CardHeader className="bg-muted/50">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-2xl mb-2">{initialData.companyName}</CardTitle>
+            <CardDescription>{initialData.address}</CardDescription>
+            <CardDescription>{initialData.contactNumber}</CardDescription>
           </div>
-          <div className="ml-auto flex items-center gap-1">
-            <Button size="sm" variant="outline" className="h-8 gap-1">
-              <Truck className="h-3.5 w-3.5" />
-              <span className="lg:sr-only xl:not-sr-only xl:whitespace-nowrap">Track Order</span>
+          <div className="flex items-center gap-2 no-print">
+            <Button 
+              size="sm" 
+              variant={initialData.orderStatus ? "outline" : "default"}
+              className="h-8 gap-1"
+            >
+              {initialData.orderStatus ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Delivered</span>
+                </>
+              ) : (
+                <>
+                  <Truck className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Order Processing</span>
+                </>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1"
+              onClick={handlePrint}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Print</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1"
+              onClick={() => {
+                console.log('Attempting to open PO:', initialData.attachedPOUrl);
+                if (initialData.attachedPOUrl) {
+                  window.open(initialData.attachedPOUrl, '_blank');
+                } else {
+                  console.log('No PO URL available');
+                }
+              }}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">View PO</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -84,55 +132,76 @@ export const OrdersForm: React.FC<OrderFormProps> = ({ initialData }) => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </CardHeader>
-        <CardContent className="p-6 text-sm">
-          <div className="grid gap-3">
-            <div className="font-semibold">Order Details</div>
-            <ul className="grid gap-3">
-              {initialData.orderItems.map((item) => (
-                <li key={item.productId} className="flex">
-                  {/* Display the product name and quantity */}
-                  <span className="text-muted-foreground">
-                    {item.product.name}
-                  </span>
-                  <span className="ml-2 text-muted-foreground"> ({item.quantity})</span>
-                  <span className="flex flex-row font-semibold ml-auto items-end">
-                    {item.totalItemAmount?.toLocaleString('en-US', { style: 'currency', currency: 'PHP' })}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <Separator className="my-2" />
-            {/* Show the total price */}
-            <ul className="grid gap-3">
-              <li className="flex items-center justify-between font-semibold">
-                <span className="text-muted-foreground">Total</span>
-                <span>{formattedTotalPrice}</span>
-              </li>
-            </ul>
-          </div>
-          <Separator className="my-4" />
-          <div>
-            <ul className="grid gap-3">
-              <li className="flex items-center justify-between font-semibold">
-                <span className="text-muted-foreground">Delivery Address / Contact Person Information</span>
-              </li>
-              <li>
-                {initialData.address}
-              </li>
-              <li>
-                {initialData.contactNumber}
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
-          <div className="text-xs text-muted-foreground">
-            Updated <time dateTime={initialData.updatedAt.toISOString()}>{new Date(initialData.updatedAt).toLocaleDateString()}</time>
-          </div>
-        </CardFooter>
-      </Card>
-    </>
+        </div>
+        <div className="mt-4 space-y-1">
+          <CardTitle className="text-lg flex items-center gap-2">
+            Order ID: {initialData.id}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 no-print"
+              onClick={() => navigator.clipboard.writeText(initialData.id)}
+            >
+              <Copy className="h-3 w-3" />
+              <span className="sr-only">Copy Order ID</span>
+            </Button>
+          </CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            PO Number: {initialData.poNumber}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 no-print"
+              onClick={() => navigator.clipboard.writeText(initialData.poNumber)}
+            >
+              <Copy className="h-3 w-3" />
+              <span className="sr-only">Copy PO Number</span>
+            </Button>
+          </CardTitle>
+          <CardDescription>Date: {new Date(initialData.createdAt).toLocaleDateString()}</CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Barcode</TableHead>
+              <TableHead>Item Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {initialData.orderItems.map((item) => (
+              <TableRow key={item.productId}>
+                <TableCell>{item.product.barCode}</TableCell>
+                <TableCell>{item.product.name}</TableCell>
+                <TableCell>{item.product.itemDesc}</TableCell>
+                <TableCell className="text-right">{item.quantity}</TableCell>
+                <TableCell className="text-right">{formatCurrency(item.product.price)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(item.totalItemAmount)}</TableCell>
+              </TableRow>
+            ))}
+            <TableRow>
+              <TableCell colSpan={5} className="font-bold text-right">Total</TableCell>
+              <TableCell className="font-bold text-right">{formattedTotalPrice}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+      <CardFooter className="flex flex-col items-start bg-muted/50 p-6 gap-4">
+        <div>
+          <h3 className="font-semibold mb-2">Delivery Address / Contact Person Information</h3>
+          <p>{initialData.address}</p>
+          <p>{initialData.contactNumber}</p>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Updated <time dateTime={initialData.updatedAt.toISOString()}>{new Date(initialData.updatedAt).toLocaleDateString()}</time>
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

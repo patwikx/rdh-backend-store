@@ -1,10 +1,9 @@
-"use client";
+'use client'
 
 import axios from "axios";
-import { Copy, Edit, File, FileText, MoreHorizontal, Receipt, ReceiptIcon, Trash, TruckIcon } from "lucide-react";
+import { CheckCheck, Edit, MoreHorizontal, ShoppingBagIcon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "react-hot-toast";
 
 import { AlertModal } from "@/components/modals/alert-modal";
 import { Button } from "@/components/ui/button";
@@ -17,44 +16,62 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { OrderColumn } from "./columns";
+import { toast } from "sonner";
+import { LucideTruck } from "lucide-react";
 
 interface CellActionProps {
   data: OrderColumn;
 }
 
-export const CellAction: React.FC<CellActionProps> = ({
-  data,
-}) => {
+export const CellAction: React.FC<CellActionProps> = ({ data }) => {
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [openDelivered, setOpenDelivered] = useState(false);  // Separate state for "Mark as Delivered"
+  const [openPaid, setOpenPaid] = useState(false);  // Separate state for "Mark as Paid"
   const router = useRouter();
   const params = useParams();
 
-  const onConfirm = async () => {
+  const onConfirmDelivered = async () => {
     try {
       setLoading(true);
-      await axios.delete(`/api/${params.storeId}/orders/${data.id}`);
-      toast.success('Order deleted.');
+      await axios.patch(`/api/${params.storeId}/orders/${data.id}`, { orderStatus: true });
+      toast.success('Order marked as delivered.');
       router.refresh();
     } catch (error) {
       toast.error('Something went wrong');
     } finally {
       setLoading(false);
-      setOpen(false);
+      setOpenDelivered(false);
     }
   };
 
-  const onCopy = (id: string) => {
-    navigator.clipboard.writeText(id);
-    toast.success('Order ID copied to clipboard.');
-  }
+  const onConfirmPaid = async () => {
+    try {
+      setLoading(true);
+      await axios.patch(`/api/${params.storeId}/orders/${data.id}`, { isPaid: true });
+      toast.success('Order marked as paid.');
+      router.refresh();
+    } catch (error) {
+      toast.error('Something went wrong');
+    } finally {
+      setLoading(false);
+      setOpenPaid(false);
+    }
+  };
 
   return (
     <>
+      {/* Alert modal for marking as delivered */}
       <AlertModal 
-        isOpen={open} 
-        onClose={() => setOpen(false)}
-        onConfirm={onConfirm}
+        isOpen={openDelivered} 
+        onClose={() => setOpenDelivered(false)}
+        onConfirm={onConfirmDelivered}
+        loading={loading}
+      />
+      {/* Alert modal for marking as paid */}
+      <AlertModal 
+        isOpen={openPaid} 
+        onClose={() => setOpenPaid(false)}
+        onConfirm={onConfirmPaid}
         loading={loading}
       />
       <DropdownMenu>
@@ -67,22 +84,22 @@ export const CellAction: React.FC<CellActionProps> = ({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuItem
-            onClick={() => onCopy(data.id)}
-          >
-            <FileText className="mr-2 h-4 w-4" /> View Order Details
-          </DropdownMenuItem>
-          <DropdownMenuItem
             onClick={() => router.push(`/${params.storeId}/orders/${data.id}`)}
           >
-            <TruckIcon className="mr-2 h-4 w-4" /> View Delivery Receipt
+            <ShoppingBagIcon className="mr-2 h-4 w-4" /> View Order Details
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => setOpen(true)}
+            onClick={() => setOpenDelivered(true)}
           >
-            <Trash className="mr-2 h-4 w-4" /> Delete
+            <LucideTruck className="mr-2 h-4 w-4" /> Mark as delivered
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setOpenPaid(true)}
+          >
+            <CheckCheck className="mr-2 h-4 w-4" /> Mark as paid
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>
   );
-};
+}

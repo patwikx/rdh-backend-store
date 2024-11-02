@@ -1,7 +1,7 @@
 "use client";
 
-import { ClipLoader } from "react-spinners";
+import { Loader as LucideLoader } from "lucide-react";
 
 export const Loader = () => {
-  return <ClipLoader color="#3498db" size={50} />
+  return <LucideLoader color="#3498db" size={30} className="animate-spin" />;
 };

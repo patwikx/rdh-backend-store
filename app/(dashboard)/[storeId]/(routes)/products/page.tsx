@@ -29,6 +29,7 @@ const ProductsPage = async ({
     id: item.id,
     barCode: item.barCode,
     name: item.name,
+    itemDesc: item.itemDesc || '',
     isFeatured: item.isFeatured,
     isArchived: item.isArchived,
     price: formatter.format(item.price),

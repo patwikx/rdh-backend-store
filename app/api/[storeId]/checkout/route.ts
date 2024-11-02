@@ -16,7 +16,7 @@ export async function POST(
   { params }: { params: { storeId: string } }
 ) {
   try {
-    const { orderItems, companyName, poNumber, address, contactNumber, clientName, clientEmail } = await req.json();
+    const { orderItems, companyName, poNumber, address, contactNumber, clientName, clientEmail, attachedPOUrl, deliveryMethod } = await req.json();
 
     // Extract productsId, quantities, and totalItemAmounts from orderItems
     const productsId = orderItems.map((item: any) => item.productId);
@@ -33,8 +33,11 @@ export async function POST(
     if (!totalItemAmounts || totalItemAmounts.length !== productsId.length) {
       return new NextResponse("Total item amounts must be provided for all product IDs", { status: 400, headers: corsHeaders });
     }
-    if (!companyName || !poNumber || !address || !contactNumber) {
+    if (!companyName || !poNumber || !contactNumber) {
       return new NextResponse("All delivery information fields are required", { status: 400, headers: corsHeaders });
+    }
+    if (!attachedPOUrl) {
+      return new NextResponse("Approved PO is required", { status: 400, headers: corsHeaders });
     }
 
     // Fetch the products
@@ -58,9 +61,11 @@ export async function POST(
         clientEmail,
         clientName,
         companyName,
+        deliveryMethod,
         poNumber,
         contactNumber,
         address,
+        attachedPOUrl,
         orderItems: {
           create: productsId.map((productId: string, index: number) => ({
             product: {

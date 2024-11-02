@@ -33,6 +33,7 @@ const OrdersPage = async ({
     companyName: item.companyName,
     poNumber: item.poNumber,
     address: item.address,
+    orderStatus: item.orderStatus,
     products: item.orderItems.map((orderItem) => orderItem.product.name).join(", "),
     // Summing up the totalItemAmount for each orderItem
     totalItemAmount: formatter.format(

@@ -69,7 +69,7 @@ model Product {
   store      Store       @relation("StoreToProduct", fields: [storeId], references: [id])
   categoryId String // Foreign Key to Category
   category   Category    @relation("CategoryToProduct", fields: [categoryId], references: [id])
-  barCode    String?
+  barCode    String      @unique
   itemDesc   String?
   name       String
   price      Float
@@ -91,20 +91,24 @@ model Product {
 }
 
 model Order {
-  id            String      @id @default(uuid())
-  storeId       String // Foreign Key to Store
-  store         Store       @relation("StoreToOrder", fields: [storeId], references: [id])
-  orderItems    OrderItem[] // Relation to OrderItem model
-  isPaid        Boolean     @default(false)
-  clientName    String      @default("")
-  clientEmail   String      @default("")
-  companyName   String      @default("")
-  poNumber      String      @default("")
-  contactNumber String      @default("")
-  address       String      @default("")
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String      @id @default(uuid())
+  storeId        String
+  store          Store       @relation("StoreToOrder", fields: [storeId], references: [id])
+  orderItems     OrderItem[]
+  isPaid         Boolean     @default(false)
+  orderStatus    Boolean     @default(false)
+  clientName     String      @default("")
+  clientEmail    String      @default("")
+  companyName    String      @default("")
+  deliveryMethod String      @default("")
+  poNumber       String      @default("")
+  attachedPOUrl  String      @default("")
+  contactNumber  String      @default("")
+  address        String      @default("")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
+  @@unique([id, storeId])
   @@index([storeId])
 }
 

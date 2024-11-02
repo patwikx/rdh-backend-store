@@ -7,41 +7,42 @@ const OrderDetailsPage = async ({
 }: {
   params: { orderId: string, storeId: string }
 }) => {
-  const orders = await prismadb.order.findUnique({
+  const order = await prismadb.order.findUnique({
     where: {
       id: params.orderId,
     },
     include: {
       orderItems: {
         include: {
-          product: true, // Include product details in each order item
+          product: true,
         },
       },
     },
   });
 
-  // If no order found, handle it gracefully
-  if (!orders) {
+  if (!order) {
     return <div>Order not found</div>;
   }
 
-  // Convert Decimal fields to numbers
-  const ordersWithFormattedPrice = {
-    ...orders,
-    orderItems: orders.orderItems.map(item => ({
+  // Convert Decimal fields to numbers and handle potential null values
+  const formattedOrder = {
+    ...order,
+    orderItems: order.orderItems.map(item => ({
       ...item,
       product: {
         ...item.product,
-        price: parseFloat(item.product.price.toString()), // Convert Decimal to number
+        price: parseFloat(item.product.price.toString()),
+        itemDesc: item.product.itemDesc || "",
       },
+      totalItemAmount: item.totalItemAmount ? parseFloat(item.totalItemAmount.toString()) : null,
     })),
   };
 
   return ( 
     <div className="flex-col">
-      <CardTitle className="mt-6 ml-8 font-bold text-xl">Delivery Receipt</CardTitle>
+      <CardTitle className="mt-6 ml-8 font-bold text-xl">Order Details</CardTitle>
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <OrdersForm initialData={ordersWithFormattedPrice} />
+        <OrdersForm initialData={formattedOrder} />
       </div>
     </div>
   );

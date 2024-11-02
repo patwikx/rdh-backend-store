@@ -24,10 +24,19 @@ import { Separator } from "@/components/ui/separator"
 import { Heading } from "@/components/ui/heading"
 import { AlertModal } from "@/components/modals/alert-modal"
 import ImageUpload from "@/components/ui/image-upload"
+import { UploadButton } from "@uploadthing/react"
+import { Label } from "@/components/ui/label"
+
+import type { OurFileRouter } from "@/app/api/uploadthing/core" 
+
+type UploadThingFile = {
+  url: string;
+  name: string;
+};
 
 const formSchema = z.object({
   label: z.string().min(1),
-  imageUrl: z.string().min(1),
+  imageUrl: z.string().min(1, "Image URL is required"),
 });
 
 type BillboardFormValues = z.infer<typeof formSchema>
@@ -49,6 +58,8 @@ export const BillboardForm: React.FC<BillboardFormProps> = ({
   const description = initialData ? 'Edit a billboard.' : 'Add a new billboard';
   const toastMessage = initialData ? 'Billboard updated.' : 'Billboard created.';
   const action = initialData ? 'Save changes' : 'Create';
+  const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([]);
+  const [uploadedFileNames, setUploadedFileNames] = useState<string[]>([]);
 
   const form = useForm<BillboardFormValues>({
     resolver: zodResolver(formSchema),
@@ -91,6 +102,20 @@ export const BillboardForm: React.FC<BillboardFormProps> = ({
     }
   }
 
+  const handleFileUpload = (res: UploadThingFile[]) => {
+    if (res && res.length > 0) {
+      const fileUrls = res.map((file: UploadThingFile) => file.url);
+      const fileNames = res.map((file: UploadThingFile) => file.name);
+      setUploadedFileUrls(prevUrls => [...prevUrls, ...fileUrls]);
+      setUploadedFileNames(prevNames => [...prevNames, ...fileNames]);
+      
+      // Set the first uploaded file URL to the imageUrl field
+      form.setValue('imageUrl', fileUrls[0]);
+      
+      toast.success("Upload Completed");
+    }
+  };
+
   return (
     <>
     <AlertModal 
@@ -115,24 +140,35 @@ export const BillboardForm: React.FC<BillboardFormProps> = ({
       <Separator />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full">
-          <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Background image</FormLabel>
-                  <FormControl>
-                    <ImageUpload 
-                      value={field.value ? [field.value] : []} 
-                      disabled={loading} 
-                      onChange={(url) => field.onChange(url)}
-                      onRemove={() => field.onChange('')}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="mt-2 flex flex-col items-center justify-center">
+            <label className="block text-center">
+              <div className="flex flex-col items-center mt-4">
+                <label className="flex flex-col items-center p-4 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-600 transition duration-300">
+                  <span className="text-center font-bold text-md mb-2 text-gray-600">Background Images</span>
+                  <UploadButton<OurFileRouter, "image">
+                    endpoint="image"
+                    onClientUploadComplete={handleFileUpload}
+                    onUploadError={(error: Error) => {
+                      toast.error(`Upload ERROR! ${error.message}`);
+                    }}
+                  />
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-500">Drag & Drop or Click to Upload</span>
+                  </div>
+                </label>
+              </div>
+            </label>
+            {uploadedFileNames.length > 0 && (
+              <div className="mt-2 text-sm text-gray-600">
+                <Label className="font-bold">Uploaded files: </Label>
+                <ul className="list-disc pl-5">
+                  {uploadedFileNames.map((fileName, index) => (
+                    <li key={index}>{fileName}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
           <div className="md:grid md:grid-cols-3 gap-8">
             <FormField
               control={form.control}
@@ -142,6 +178,19 @@ export const BillboardForm: React.FC<BillboardFormProps> = ({
                   <FormLabel>Label</FormLabel>
                   <FormControl>
                     <Input disabled={loading} placeholder="Billboard label" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Image URL" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

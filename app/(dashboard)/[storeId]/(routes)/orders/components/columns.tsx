@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { CellAction } from "./cell-action";
+import { Badge } from "@/components/ui/badge";
 
 export type OrderColumn = {
   id: string;
@@ -13,6 +14,7 @@ export type OrderColumn = {
   contactNumber: string;
   companyName: string;
   poNumber: string;
+  orderStatus: boolean;
 }
 
 export const columns: ColumnDef<OrderColumn>[] = [
@@ -41,11 +43,34 @@ export const columns: ColumnDef<OrderColumn>[] = [
     header: "Total Amount",
   },
   {
+    accessorKey: "orderStatus",
+    header: "Order Status",
+    cell: ({ row }) => {
+      const status = row.getValue("orderStatus") as boolean
+      
+      return (
+        <Badge variant={status ? "default" : "destructive"}>
+          {status ? "Served" : "Unserved"}
+        </Badge>
+      )
+    }
+  },
+  {
     accessorKey: "isPaid",
-    header: "Served",
+    header: "Payment Status",
+    cell: ({ row }) => {
+      const status = row.getValue("isPaid") as boolean
+      
+      return (
+        <Badge variant={status ? "default" : "destructive"}>
+          {status ? "Paid" : "Unpaid"}
+        </Badge>
+      )
+    }
   },
   {
     id: "actions",
+    header: "Actions",
     cell: ({ row }) => <CellAction data={row.original} />
   },
 ];

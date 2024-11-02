@@ -25,11 +25,21 @@ import { Separator } from "@/components/ui/separator"
 import { Heading } from "@/components/ui/heading"
 import { AlertModal } from "@/components/modals/alert-modal"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import ImageUpload from "@/components/ui/image-upload"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { UploadButton } from "@uploadthing/react"
+import { OurFileRouter } from "@/app/api/uploadthing/core"
+import { Textarea } from "@/components/ui/textarea"
+
+type UploadThingFile = {
+  url: string;
+  name: string;
+};
 
 const formSchema = z.object({
+  barCode: z.string().min(13),
   name: z.string().min(1),
+  itemDesc: z.string().min(1),
   images: z.object({ url: z.string() }).array(),
   price: z.coerce.number().min(1),
   categoryId: z.string().min(1),
@@ -66,20 +76,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const description = initialData ? 'Edit a product.' : 'Add a new product';
   const toastMessage = initialData ? 'Product updated.' : 'Product created.';
   const action = initialData ? 'Save changes' : 'Create';
+  const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([]);
+  const [uploadedFileNames, setUploadedFileNames] = useState<string[]>([]);
 
-  const defaultValues = initialData ? {
-    ...initialData,
-    price: parseFloat(String(initialData?.price)),
-  } : {
-    name: '',
-    images: [],
-    price: 0,
-    categoryId: '',
-    colorId: '',
-    sizeId: '',
-    isFeatured: false,
-    isArchived: false,
-  }
+  const defaultValues = initialData
+  ? {
+      ...initialData,
+      price: parseFloat(String(initialData?.price)),
+      barCode: initialData.barCode || undefined,
+      itemDesc: initialData.itemDesc || undefined,
+      images: initialData.images.map(img => ({ url: img.url }))
+    }
+  : {
+      barCode: '',
+      name: '',
+      itemDesc: '',
+      images: [],
+      price: 0,
+      categoryId: '',
+      colorId: '',
+      sizeId: '',
+      isFeatured: false,
+      isArchived: false,
+    };
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
@@ -119,6 +138,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   }
 
+  const handleFileUpload = (res: UploadThingFile[]) => {
+    if (res && res.length > 0) {
+      const fileUrls = res.map((file: UploadThingFile) => file.url);
+      const fileNames = res.map((file: UploadThingFile) => file.name);
+      setUploadedFileUrls(prevUrls => [...prevUrls, ...fileUrls]);
+      setUploadedFileNames(prevNames => [...prevNames, ...fileNames]);
+      
+      // Set the uploaded file URLs to the images field as an array of objects
+      form.setValue('images', fileUrls.map(url => ({ url })));
+      toast.success("Upload Completed");
+    }
+  };
+
   return (
     <>
     <AlertModal 
@@ -143,25 +175,49 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       <Separator />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full">
-          <FormField
-            control={form.control}
-            name="images"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Images</FormLabel>
-                <FormControl>
-                  <ImageUpload 
-                    value={field.value.map((image) => image.url)} 
-                    disabled={loading} 
-                    onChange={(url) => field.onChange([...field.value, { url }])}
-                    onRemove={(url) => field.onChange([...field.value.filter((current) => current.url !== url)])}
+        <div className="mt-2 flex flex-col items-center justify-center">
+            <label className="block text-center">
+              <div className="flex flex-col items-center mt-4">
+                <label className="flex flex-col items-center p-4 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-gray-600 transition duration-300">
+                  <span className="text-center font-bold text-md mb-2 text-gray-600">Background Images</span>
+                  <UploadButton<OurFileRouter, "image">
+                    endpoint="image"
+                    onClientUploadComplete={handleFileUpload}
+                    onUploadError={(error: Error) => {
+                      toast.error(`Upload ERROR! ${error.message}`);
+                    }}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                  <div className="flex flex-col items-center">
+                    <span className="text-gray-500">Drag & Drop or Click to Upload</span>
+                  </div>
+                </label>
+              </div>
+            </label>
+            {uploadedFileNames.length > 0 && (
+              <div className="mt-2 text-sm text-gray-600">
+                <Label className="font-bold">Uploaded files: </Label>
+                <ul className="list-disc pl-5">
+                  {uploadedFileNames.map((fileName, index) => (
+                    <li key={index}>{fileName}</li>
+                  ))}
+                </ul>
+              </div>
             )}
-          />
+          </div>
           <div className="md:grid md:grid-cols-3 gap-8">
+          <FormField
+              control={form.control}
+              name="barCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Barcode</FormLabel>
+                  <FormControl>
+                    <Input disabled={loading} placeholder="Barcode" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="name"
@@ -170,6 +226,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input disabled={loading} placeholder="Product name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+                        <FormField
+              control={form.control}
+              name="itemDesc"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Description</FormLabel>
+                  <FormControl>
+                    <Textarea disabled={loading} placeholder="Item Description" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
