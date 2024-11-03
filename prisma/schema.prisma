@@ -91,22 +91,25 @@ model Product {
 }
 
 model Order {
-  id             String      @id @default(uuid())
-  storeId        String
-  store          Store       @relation("StoreToOrder", fields: [storeId], references: [id])
-  orderItems     OrderItem[]
-  isPaid         Boolean     @default(false)
-  orderStatus    Boolean     @default(false)
-  clientName     String      @default("")
-  clientEmail    String      @default("")
-  companyName    String      @default("")
-  deliveryMethod String      @default("")
-  poNumber       String      @default("")
-  attachedPOUrl  String      @default("")
-  contactNumber  String      @default("")
-  address        String      @default("")
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                         String      @id @default(uuid())
+  storeId                    String
+  store                      Store       @relation("StoreToOrder", fields: [storeId], references: [id])
+  orderItems                 OrderItem[]
+  isPaid                     Boolean     @default(false)
+  orderStatus                Boolean     @default(false)
+  clientName                 String      @default("")
+  clientEmail                String      @default("")
+  companyName                String      @default("")
+  deliveryMethod             String      @default("")
+  poNumber                   String      @default("")
+  shippingFee                Float?
+  totalAmountItemAndShipping Decimal?
+  attachedPOUrl              String      @default("")
+  selectedDate               String?     @default("")
+  contactNumber              String      @default("")
+  address                    String      @default("")
+  createdAt                  DateTime    @default(now())
+  updatedAt                  DateTime    @updatedAt
 
   @@unique([id, storeId])
   @@index([storeId])
@@ -114,13 +117,14 @@ model Order {
 
 // Intermediary for a many-to-many relationship
 model OrderItem {
-  id              String  @id @default(uuid())
-  orderId         String // Foreign Key to Order
-  order           Order   @relation(fields: [orderId], references: [id])
-  productId       String // Foreign Key to Product
-  product         Product @relation(fields: [productId], references: [id])
-  quantity        String?
-  totalItemAmount Float?
+  id                         String  @id @default(uuid())
+  orderId                    String // Foreign Key to Order
+  order                      Order   @relation(fields: [orderId], references: [id])
+  productId                  String // Foreign Key to Product
+  product                    Product @relation(fields: [productId], references: [id])
+  quantity                   String?
+  totalItemAmount            Float?
+  totalAmountItemAndShipping Float?
 
   @@index([orderId])
   @@index([productId])
