@@ -6,7 +6,7 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "react-hot-toast"
-import { Trash } from "lucide-react"
+import { Loader, Trash } from "lucide-react"
 import { Category, Color, Image, Product, Size } from "@prisma/client"
 import { useParams, useRouter } from "next/navigation"
 
@@ -110,11 +110,28 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       setLoading(true);
       if (initialData) {
         await axios.patch(`/api/${params.storeId}/products/${params.productId}`, data);
+        toast.success(toastMessage);
       } else {
         await axios.post(`/api/${params.storeId}/products`, data);
+        toast.success(toastMessage);
+        // Clear all form fields
+        form.reset({
+          barCode: '',
+          name: '',
+          itemDesc: '',
+          images: [],
+          price: 0,
+          categoryId: '',
+          colorId: '',
+          sizeId: '',
+          isFeatured: false,
+          isArchived: false,
+        });
+        // Clear uploaded file states
+        setUploadedFileUrls([]);
+        setUploadedFileNames([]);
       }
       router.refresh();
-      toast.success(toastMessage);
     } catch (error: any) {
       toast.error('Something went wrong.');
     } finally {
@@ -370,7 +387,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             />
           </div>
           <Button disabled={loading} className="ml-auto" type="submit">
-            {action}
+            {loading ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              action
+            )}
           </Button>
         </form>
       </Form>
