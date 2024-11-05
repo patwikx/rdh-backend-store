@@ -49,9 +49,9 @@ export const columns: ColumnDef<OrderColumn>[] = [
       const status = row.getValue("orderStatus") as boolean
       
       return (
-        <Badge variant={status ? "default" : "destructive"}>
-          {status ? "Served" : "Unserved"}
-        </Badge>
+        <Badge className={status ? "bg-blue-500 text-white" : "bg-yellow-500 text-black"}>
+        {status ? "Delivered" : "Processing"}
+      </Badge>
       )
     }
   },
@@ -62,9 +62,10 @@ export const columns: ColumnDef<OrderColumn>[] = [
       const status = row.getValue("isPaid") as boolean
       
       return (
-        <Badge variant={status ? "default" : "destructive"}>
-          {status ? "Paid" : "Unpaid"}
-        </Badge>
+<Badge className={status ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
+  {status ? "Paid" : "Unpaid"}
+</Badge>
+
       )
     }
   },
