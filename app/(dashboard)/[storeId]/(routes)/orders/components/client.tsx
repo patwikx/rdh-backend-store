@@ -35,8 +35,10 @@ export const OrderClient: React.FC<OrderClientProps> = ({ data }) => {
     const matchesSearch = order.poNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           order.companyName.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || 
-                          (statusFilter === "completed" && order.orderStatus) ||
-                          (statusFilter === "processing" && !order.orderStatus)
+                          (statusFilter === "delivered" && order.orderStatus) ||
+                          (statusFilter === "processing" && !order.orderStatus) ||
+                          (statusFilter === "paid" && order.isPaid) ||
+                          (statusFilter === "unpaid" && order.isPaid)
     return matchesSearch && matchesStatus
   })
 
@@ -100,8 +102,10 @@ export const OrderClient: React.FC<OrderClientProps> = ({ data }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
               </SelectContent>
             </Select>
           </div>
