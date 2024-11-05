@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { formatter } from "@/lib/utils"
 
 interface RevenueData {
   name: string
@@ -74,7 +75,7 @@ export default function Overview({ data }: OverviewProps) {
         </div>
         <div className="flex flex-col gap-1">
           <div className="text-2xl font-bold tracking-tight">
-            ₱{totalRevenue.toLocaleString()}.00
+          {formatter.format(totalRevenue)}
           </div>
           <div className="text-sm text-muted-foreground">
             Total revenue for the year
