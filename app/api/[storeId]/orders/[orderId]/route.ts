@@ -11,7 +11,6 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-// Single PATCH function to handle both orderStatus and isPaid updates
 export async function PATCH(
   req: Request,
   { params }: { params: { orderId: string } }
@@ -21,12 +20,20 @@ export async function PATCH(
       return new NextResponse("Order ID is required", { status: 400, headers: corsHeaders });
     }
 
-    const { orderStatus, isPaid } = await req.json(); // Get data from the request body
+    const { orderStatus, isPaid, acctgRemarks, acctgAttachedUrl } = await req.json();
 
     // Prepare data to update
-    const updateData: { orderStatus?: boolean; isPaid?: boolean } = {};
+    const updateData: {
+      orderStatus?: boolean;
+      isPaid?: boolean;
+      acctgRemarks?: string;
+      acctgAttachedUrl?: string;
+    } = {};
+
     if (orderStatus !== undefined) updateData.orderStatus = orderStatus;
     if (isPaid !== undefined) updateData.isPaid = isPaid;
+    if (acctgRemarks !== undefined) updateData.acctgRemarks = acctgRemarks;
+    if (acctgAttachedUrl !== undefined) updateData.acctgAttachedUrl = acctgAttachedUrl;
 
     // Perform the update in the database
     const updatedOrder = await prismadb.order.update({

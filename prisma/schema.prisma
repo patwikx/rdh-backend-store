@@ -108,6 +108,8 @@ model Order {
   selectedDate               String?     @default("")
   contactNumber              String      @default("")
   address                    String      @default("")
+  acctgRemarks               String?     @default("")
+  acctgAttachedUrl           String?     @default("")
   createdAt                  DateTime    @default(now())
   updatedAt                  DateTime    @updatedAt
 
