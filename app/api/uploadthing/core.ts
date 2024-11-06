@@ -9,6 +9,8 @@ export const ourFileRouter = {
     .onUploadComplete(() => {}),
   approvedPOUrl: f({ image: { maxFileSize: '4MB', maxFileCount: 1 } })
     .onUploadComplete(() => {}),
+  storeAttachedUrl: f({ image: { maxFileSize: '4MB', maxFileCount: 1 } })
+    .onUploadComplete(() => {}),
 } satisfies FileRouter
 
 export type OurFileRouter = typeof ourFileRouter

@@ -20,7 +20,7 @@ export async function PATCH(
       return new NextResponse("Order ID is required", { status: 400, headers: corsHeaders });
     }
 
-    const { orderStatus, isPaid, acctgRemarks, acctgAttachedUrl } = await req.json();
+    const { orderStatus, isPaid, acctgRemarks, acctgAttachedUrl, storeAttachedUrl, storeRemarks } = await req.json();
 
     // Prepare data to update
     const updateData: {
@@ -28,13 +28,16 @@ export async function PATCH(
       isPaid?: boolean;
       acctgRemarks?: string;
       acctgAttachedUrl?: string;
+      storeRemarks?: string;
+      storeAttachedUrl?: string;
     } = {};
 
     if (orderStatus !== undefined) updateData.orderStatus = orderStatus;
     if (isPaid !== undefined) updateData.isPaid = isPaid;
     if (acctgRemarks !== undefined) updateData.acctgRemarks = acctgRemarks;
     if (acctgAttachedUrl !== undefined) updateData.acctgAttachedUrl = acctgAttachedUrl;
-
+    if (storeAttachedUrl !== undefined) updateData.storeAttachedUrl = storeAttachedUrl;
+    if (storeRemarks !== undefined) updateData.storeRemarks = storeRemarks;
     // Perform the update in the database
     const updatedOrder = await prismadb.order.update({
       where: { id: params.orderId },
